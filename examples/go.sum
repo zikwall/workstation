@@ -1,2 +1,4 @@
 github.com/zikwall/workstation v0.0.0-20210117133956-e88c7f65e770 h1:72dUTuVGYoJVQEOgv2SJ6vi95A4r7Fq+vo+6zfysLQw=
 github.com/zikwall/workstation v0.0.0-20210117133956-e88c7f65e770/go.mod h1:G4vaaH5eT33MSqd4CL146pkf9Hvumrw5IMu0rjJ0Edc=
+github.com/zikwall/workstation v0.0.0-20210117170550-89776ec5790d h1:x5kiryXnRCXnAgheRMjvuzYVNT88KDXpV0KjB80A+fU=
+github.com/zikwall/workstation v0.0.0-20210117170550-89776ec5790d/go.mod h1:G4vaaH5eT33MSqd4CL146pkf9Hvumrw5IMu0rjJ0Edc=
