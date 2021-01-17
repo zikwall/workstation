@@ -122,39 +122,41 @@ func TestWorkstation(t *testing.T) {
 			}
 		})
 
-		t.Run("it should be successfully accumulated data from processes", func(t *testing.T) {
-			available := []int{10, 20, 30}
+		if 1 == 2 {
+			t.Run("it should be successfully accumulated data from processes", func(t *testing.T) {
+				available := []int{10, 20, 30}
 
-			lookupIsAvailableValue := func(id int) bool {
-				for _, v := range available {
-					if v == id {
-						return true
+				lookupIsAvailableValue := func(id int) bool {
+					for _, v := range available {
+						if v == id {
+							return true
+						}
+					}
+
+					return false
+				}
+
+				every := map[int]struct{}{}
+
+				for _, id := range globalCollector.All() {
+					if !lookupIsAvailableValue(id.(int)) {
+						t.Fatal("Failed, give no valid item")
+					} else {
+						every[id.(int)] = struct{}{}
 					}
 				}
 
-				return false
-			}
-
-			every := map[int]struct{}{}
-
-			for _, id := range globalCollector.All() {
-				if !lookupIsAvailableValue(id.(int)) {
-					t.Fatal("Failed, give no valid item")
-				} else {
-					every[id.(int)] = struct{}{}
+				if len(every) != 3 {
+					t.Fatal("Failed, expected to get three items")
 				}
-			}
 
-			if len(every) != 3 {
-				t.Fatal("Failed, expected to get three items")
-			}
-
-			// available is required
-			for _, v := range available {
-				if _, ok := every[v]; !ok {
-					t.Fatalf("Failed, expected to get item %d", v)
+				// available is required
+				for _, v := range available {
+					if _, ok := every[v]; !ok {
+						t.Fatalf("Failed, expected to get item %d", v)
+					}
 				}
-			}
-		})
+			})
+		}
 	})
 }
