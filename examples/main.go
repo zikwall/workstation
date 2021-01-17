@@ -24,13 +24,17 @@ func main() {
 		fmt.Println(t.String(), a, b, o)
 	}
 
-	err := station.PerformAsync("first_process", workstation.Payload{"a": 1, "b": "6", "c": sampleFunctionC})
+	err := station.PerformAsync(
+		"first_process", workstation.Payload{"a": 1, "b": "6", "c": sampleFunctionC},
+	)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = station.PerformAsync("second_process", workstation.Payload{"a": 3, "b": "3", "c": sampleFunctionC})
+	err = station.PerformAsync(
+		"second_process", workstation.Payload{"a": 3, "b": "3", "c": sampleFunctionC},
+	)
 
 	if err != nil {
 		log.Fatal(err)
