@@ -21,12 +21,12 @@ package main
 
 type MyWorker struct{}
 
-func (w *MyWorker) Perform(instance Instantiable, key string, payload Payload) {
+func (w *MyWorker) Perform(instance workstation.Instantiable, key string, payload workstation.Payload) {
 	//.. <your custom code here>
 }
 
 // example long-running process
-func (w *MyWorker) Perform(instance Instantiable, key string, payload Payload) {
+func (w *MyWorker) Perform(instance workstation.Instantiable, key string, payload workstation.Payload) {
 	ctx, cancel := context.WithCancel(instance.ProvideExecutionContext())
 
 	defer func() {
@@ -36,10 +36,8 @@ func (w *MyWorker) Perform(instance Instantiable, key string, payload Payload) {
 	}()
 
 	isCanceled := instance.GetIsCancelledChannel(key)
-
-	// if for any reason the process was removed from the pool, it will be terminated immediately, 
-	// with a complete memory cleanup
-	for instance.ObserveProcessAlive(key) {
+	
+	for {
 		select {
 		// workstation stopped
 		case <-ctx.Done():
@@ -53,10 +51,15 @@ func (w *MyWorker) Perform(instance Instantiable, key string, payload Payload) {
 	}
 }
 
-// and create workstation
+// and create workstation ...
+```
+
+##### Workstation. Create workstation
+
+```go
 ctx, cancel := context.WithCancel(context.Background())
 
-station := BuildWorkstation(ctx, &MyWorker{})
+station := workstation.BuildWorkstation(ctx, &MyWorker{})
 
 // run sub-processes
 
@@ -82,10 +85,9 @@ if err := station.Shutdown(); err != nil {
 
 - [ ] **Workstation**: configuration
 - [ ] **Workstation**: logs
-- [ ] **Workstation**: processes revoke mode (`Context`, `Alive`, `Full(Context|Alive)`)
 - [ ] **Workstation**: limitation of parallel processes
 - [ ] **Workstation**: max retry the process if the process failed with an error
 - [ ] **Workstation**: server for pull/push jobs
 - [ ] **Workstation**: web interface with auth, dashboards, control panel
-- [ ] **Workstation**: process states: processed, busy, failed, dead (if retry > N)
+- [ ] **Workstation**: process states: processed, busy, failed, dead (if retry > N), cancelled
 - [ ] **WorkstationWorkerPool**: need to implement

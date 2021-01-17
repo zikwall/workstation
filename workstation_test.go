@@ -3,6 +3,7 @@ package workstation
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -49,11 +50,12 @@ func (w *MockWorker) Perform(instance Instantiable, key string, payload Payload)
 
 	isCanceled := instance.GetIsCancelledChannel(key)
 
-	for instance.ObserveProcessAlive(key) {
+	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-isCanceled:
+			fmt.Println("Canceled by channel")
 			return
 		default:
 			globalCollector.Add(payload["id"])
@@ -100,6 +102,9 @@ func TestWorkstation(t *testing.T) {
 				if err := workstation.RevokeAsync("process_one"); err != nil {
 					t.Fatal(err)
 				}
+
+				// wait removed from pool by defer
+				<-time.After(time.Millisecond * 150)
 
 				if err := workstation.RevokeAsync("process_one"); err == nil {
 					t.Fatal("Failed, expected to get a removed error")

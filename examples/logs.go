@@ -28,3 +28,7 @@ func errorCloseProcessStdoutReader(id string, err error) {
 func infoCloseProcessStdoutReader(id string) {
 	log.Println(fmt.Sprintf("[INFO] Read from stdout for async task #%s completed, successfully!", id))
 }
+
+func infoCancelledProcessChannel(id string) {
+	log.Println(fmt.Sprintf("[INFO] Cancel channel for async task #%s completed, successfully!", id))
+}
