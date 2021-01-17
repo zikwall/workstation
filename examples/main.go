@@ -40,6 +40,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+	go func() {
+		<-time.After(time.Second * 5)
+
+		if err := station.RevokeAsync("first_process"); err != nil {
+			log.Println(err)
+		}
+	}()
+
 	<-sig
 
 	cancelFunc()
@@ -124,9 +132,10 @@ func (m *GoSubprocessMonitor) Perform(instance workstation.Instantiable, key str
 
 	isCanceled := instance.GetIsCancelledChannel(key)
 
-	for instance.ObserveProcessAlive(key) {
+	for {
 		select {
 		case <-isCanceled:
+			infoCancelledProcessChannel(key)
 			return
 		case <-ctx.Done():
 			return

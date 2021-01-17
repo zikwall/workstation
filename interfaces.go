@@ -9,7 +9,7 @@ type (
 		Perform(instance Instantiable, key string, payload Payload)
 	}
 	Observable interface {
-		ObserveProcessAlive(key string) bool
+		LookupProcess(key string) bool
 	}
 	Providable interface {
 		ProvideExecutionContext() context.Context

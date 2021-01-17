@@ -26,11 +26,6 @@ func (self *Workstation) GetIsCancelledChannel(key string) <-chan struct{} {
 	return ch
 }
 
-// implement Observable interface
-func (self *Workstation) ObserveProcessAlive(key string) bool {
-	return self.lookupAsync(key)
-}
-
 // implement Providable interface
 func (self *Workstation) ProvideExecutionContext() context.Context {
 	return self.context
@@ -38,7 +33,7 @@ func (self *Workstation) ProvideExecutionContext() context.Context {
 
 // implement Stationable interface
 func (self *Workstation) PerformAsync(key string, payload Payload) error {
-	if self.lookupAsync(key) {
+	if self.LookupProcess(key) {
 		return ErrorAsyncProcessAlreadyExists
 	}
 
@@ -49,7 +44,8 @@ func (self *Workstation) PerformAsync(key string, payload Payload) error {
 
 		defer func() {
 			// try detach
-			self.detach(process)
+			self.close(key)
+			self.detach(key)
 			self.wg.Done()
 		}()
 
@@ -61,17 +57,11 @@ func (self *Workstation) PerformAsync(key string, payload Payload) error {
 }
 
 func (self *Workstation) RevokeAsync(key string) error {
-	if !self.lookupAsync(key) {
+	if !self.LookupProcess(key) {
 		return ErrorAsyncProcessNotFoundOrAlreadyCompleted
 	}
 
-	if isClosed(self.channel(key)) {
-		return ErrorAsyncProcessChannelAlreadyClosed
-	}
-
 	self.cancel(key)
-	self.close(key)
-	self.detach(key)
 
 	return nil
 }
@@ -106,7 +96,7 @@ func (self *Workstation) CountAsync() int {
 
 // private internal workstation API
 
-func (self *Workstation) lookupAsync(key string) bool {
+func (self *Workstation) LookupProcess(key string) bool {
 	self.mu.RLock()
 	_, ok := self.processes[key]
 	self.mu.RUnlock()
@@ -156,14 +146,4 @@ func (self *Workstation) await(waitDuration time.Duration) {
 	case <-time.After(waitDuration):
 		// false
 	}
-}
-
-func isClosed(ch <-chan struct{}) bool {
-	select {
-	case <-ch:
-		return true
-	default:
-	}
-
-	return false
 }
