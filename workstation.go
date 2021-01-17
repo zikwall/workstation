@@ -66,6 +66,21 @@ func (self *Workstation) RevokeAsync(key string) error {
 	return nil
 }
 
+func (self *Workstation) CountAsync() int {
+	self.mu.RLock()
+	defer self.mu.RUnlock()
+
+	return len(self.processes)
+}
+
+func (self *Workstation) LookupProcess(key string) bool {
+	self.mu.RLock()
+	_, ok := self.processes[key]
+	self.mu.RUnlock()
+
+	return ok
+}
+
 // Completion occurs synchronously,
 // which represents the possibility of waiting for the completion of all asynchronous processes,
 // or an emergency termination
@@ -87,22 +102,7 @@ func (self *Workstation) Shutdown() error {
 	return err
 }
 
-func (self *Workstation) CountAsync() int {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
-
-	return len(self.processes)
-}
-
 // private internal workstation API
-
-func (self *Workstation) LookupProcess(key string) bool {
-	self.mu.RLock()
-	_, ok := self.processes[key]
-	self.mu.RUnlock()
-
-	return ok
-}
 
 func (self *Workstation) attach(key string) {
 	self.mu.Lock()

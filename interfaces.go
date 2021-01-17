@@ -10,6 +10,7 @@ type (
 	}
 	Observable interface {
 		LookupProcess(key string) bool
+		CountAsync() int
 	}
 	Providable interface {
 		ProvideExecutionContext() context.Context
@@ -32,7 +33,6 @@ type (
 		Instantiable
 		PerformAsync(key string, payload Payload) error
 		RevokeAsync(key string) error
-		CountAsync() int
 		Shutdown() error
 	}
 )
