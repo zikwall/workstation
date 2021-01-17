@@ -80,6 +80,12 @@ if err := station.Shutdown(); err != nil {
 
 #### Todo
 
-- [ ] Workstation: configuration
-- [ ] Workstation: logs
-- [ ] Workstation: processes revoke mode (`Context`, `Alive`, `Full(Context|Alive)`)
+- [ ] **Workstation**: configuration
+- [ ] **Workstation**: logs
+- [ ] **Workstation**: processes revoke mode (`Context`, `Alive`, `Full(Context|Alive)`)
+- [ ] **Workstation**: limitation of parallel processes
+- [ ] **Workstation**: max retry the process if the process failed with an error
+- [ ] **Workstation**: server for pull/push jobs
+- [ ] **Workstation**: web interface with auth, dashboards, control panel
+- [ ] **Workstation**: process states: processed, busy, failed, dead (if retry > N)
+- [ ] **WorkstationWorkerPool**: need to implement
