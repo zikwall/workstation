@@ -9,26 +9,12 @@ import (
 func BuildWorkstation(context context.Context, worker Workerable) Stationable {
 	return &Workstation{
 		mu:        sync.RWMutex{},
-		processes: map[string]chan struct{}{},
+		processes: map[string]Process{},
 		worker:    worker,
 		context:   context,
 		wg:        sync.WaitGroup{},
 		done:      make(chan struct{}),
 	}
-}
-
-// implement Cancellable interface
-func (self *Workstation) GetIsCancelledChannel(key string) <-chan struct{} {
-	self.mu.RLock()
-	ch := self.processes[key]
-	self.mu.RUnlock()
-
-	return ch
-}
-
-// implement Providable interface
-func (self *Workstation) ProvideExecutionContext() context.Context {
-	return self.context
 }
 
 // implement Stationable interface
@@ -37,20 +23,26 @@ func (self *Workstation) PerformAsync(key string, payload Payload) error {
 		return ErrorAsyncProcessAlreadyExists
 	}
 
-	self.attach(key)
+	ctx, cancel := context.WithCancel(self.context)
+
+	self.attach(key, Process{
+		ctx:        ctx,
+		cancel:     cancel,
+		isCanceled: false,
+	})
 
 	go func(process string) {
 		self.wg.Add(1)
 
 		defer func() {
+			self.safeCancel(key)
 			// try detach
-			self.close(key)
 			self.detach(key)
 			self.wg.Done()
 		}()
 
 		// The method must work synchronously, otherwise it will be completed
-		self.worker.Perform(self, process, payload)
+		self.worker.Perform(ctx, process, payload)
 	}(key)
 
 	return nil
@@ -62,6 +54,7 @@ func (self *Workstation) RevokeAsync(key string) error {
 	}
 
 	self.cancel(key)
+	self.detach(key)
 
 	return nil
 }
@@ -104,9 +97,9 @@ func (self *Workstation) Shutdown() error {
 
 // private internal workstation API
 
-func (self *Workstation) attach(key string) {
+func (self *Workstation) attach(key string, process Process) {
 	self.mu.Lock()
-	self.processes[key] = make(chan struct{}, 1)
+	self.processes[key] = process
 	self.mu.Unlock()
 }
 
@@ -122,20 +115,16 @@ func (self *Workstation) cancel(key string) {
 	defer self.mu.Unlock()
 
 	// Task is cancelled
-	self.processes[key] <- struct{}{}
+	self.processes[key].cancel()
 }
 
-func (self *Workstation) close(key string) {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-	close(self.processes[key])
-}
+func (self *Workstation) safeCancel(key string) {
+	self.mu.RLock()
+	defer self.mu.RUnlock()
 
-func (self *Workstation) channel(key string) <-chan struct{} {
-	self.mu.Lock()
-	defer self.mu.Unlock()
-
-	return self.processes[key]
+	if _, ok := self.processes[key]; ok && self.processes[key].ctx.Err() == nil {
+		self.processes[key].cancel()
+	}
 }
 
 // The method waits for graceful completion or crashes after a certain amount of time

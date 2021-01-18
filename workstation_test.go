@@ -43,19 +43,11 @@ var globalCollector = &Collector{
 
 type MockWorker struct{}
 
-func (w *MockWorker) Perform(instance Instantiable, key string, payload Payload) {
-	ctx, cancel := context.WithCancel(instance.ProvideExecutionContext())
-
-	defer cancel()
-
-	isCanceled := instance.GetIsCancelledChannel(key)
-
+func (w *MockWorker) Perform(ctx context.Context, key string, payload Payload) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
-		case <-isCanceled:
-			fmt.Println("Canceled by channel")
+			fmt.Println("Cancelled")
 			return
 		default:
 			globalCollector.Add(payload["id"])
@@ -103,9 +95,6 @@ func TestWorkstation(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				// wait removed from pool by defer
-				<-time.After(time.Millisecond * 150)
-
 				if err := workstation.RevokeAsync("process_one"); err == nil {
 					t.Fatal("Failed, expected to get a removed error")
 				} else {
@@ -114,6 +103,16 @@ func TestWorkstation(t *testing.T) {
 					}
 				}
 			})
+		})
+
+		t.Run("it should be success create new process", func(t *testing.T) {
+			if err := workstation.PerformAsync("process_four", Payload{"id": 40, "name": "Process Four"}); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := workstation.PerformAsync("process_one", Payload{"id": 10, "name": "Process One"}); err != nil {
+				t.Fatal(err)
+			}
 		})
 
 		cancel()

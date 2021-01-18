@@ -19,36 +19,17 @@
 ```go
 package main
 
+import (
+	"context"
+	"github.com/zikwall/workstation"
+)
+
 type MyWorker struct{}
 
-func (w *MyWorker) Perform(instance workstation.Instantiable, key string, payload workstation.Payload) {
+func (w *MyWorker) Perform(ctx context.Context, key string, payload workstation.Payload) {
 	//.. <your custom code here>
-}
-
-// example long-running process
-func (w *MyWorker) Perform(instance workstation.Instantiable, key string, payload workstation.Payload) {
-	ctx, cancel := context.WithCancel(instance.ProvideExecutionContext())
-
-	defer func() {
-		// .. <code execute after stopped process>
-
-		cancel()
-	}()
-
-	isCanceled := instance.GetIsCancelledChannel(key)
-	
-	for {
-		select {
-		// workstation stopped
-		case <-ctx.Done():
-			return
-		// process is canceled (by revoke mode Context)
-		case <-isCanceled:
-			return
-		default:
-			// <handle>
-		}
-	}
+	//.. anything longer
+	//.. or unit process
 }
 
 // and create workstation ...
@@ -66,10 +47,6 @@ station := workstation.BuildWorkstation(ctx, &MyWorker{})
 err := station.PerformAsync(
     "first_process", workstation.Payload{"a": 1, "b": "6", "c": sampleFunctionC},
 )
-
-if err != nil {
-    log.Fatal(err)
-}
 
 // .. <another sub-processes>
 // .. <your custom code>
