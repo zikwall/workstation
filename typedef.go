@@ -8,9 +8,8 @@ import (
 type (
 	Payload map[string]interface{}
 	Process struct {
-		ctx        context.Context
-		cancel     context.CancelFunc
-		isCanceled bool
+		ctx    context.Context
+		cancel context.CancelFunc
 	}
 	Workstation struct {
 		mu        sync.RWMutex

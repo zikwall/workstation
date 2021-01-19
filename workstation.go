@@ -26,9 +26,8 @@ func (self *Workstation) PerformAsync(key string, payload Payload) error {
 	ctx, cancel := context.WithCancel(self.context)
 
 	self.attach(key, Process{
-		ctx:        ctx,
-		cancel:     cancel,
-		isCanceled: false,
+		ctx:    ctx,
+		cancel: cancel,
 	})
 
 	go func(process string) {
