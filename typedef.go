@@ -6,10 +6,14 @@ import (
 )
 
 type (
-	Payload     map[string]interface{}
+	Payload map[string]interface{}
+	Process struct {
+		ctx    context.Context
+		cancel context.CancelFunc
+	}
 	Workstation struct {
 		mu        sync.RWMutex
-		processes map[string]chan struct{}
+		processes map[string]Process
 		worker    Workerable
 		context   context.Context
 		// This property simultaneously serves as a counter for asynchronous tasks
