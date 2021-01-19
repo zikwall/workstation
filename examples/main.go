@@ -61,7 +61,7 @@ func main() {
 
 type GoSubprocessMonitor struct{}
 
-func (m *GoSubprocessMonitor) Perform(instance workstation.Instantiable, key string, payload workstation.Payload) {
+func (m *GoSubprocessMonitor) Perform(ctx context.Context, key string, payload workstation.Payload) {
 	// Note: check is successfully cast!
 	a := payload["a"].(int)
 	b := payload["b"].(string)
@@ -73,8 +73,6 @@ func (m *GoSubprocessMonitor) Perform(instance workstation.Instantiable, key str
 		log.Fatal(err)
 	}
 
-	ctx, cancel := context.WithCancel(instance.ProvideExecutionContext())
-
 	defer func() {
 		if err := watcher.w.Close(); err != nil {
 			log.Fatal(err)
@@ -85,8 +83,6 @@ func (m *GoSubprocessMonitor) Perform(instance workstation.Instantiable, key str
 		} else {
 			infoSuccessKillprocess(key, watcher.cmd.Process.Pid)
 		}
-
-		cancel()
 	}()
 
 	goSubprocessOutput := make(chan string, 100)
@@ -130,14 +126,10 @@ func (m *GoSubprocessMonitor) Perform(instance workstation.Instantiable, key str
 		}
 	}()
 
-	isCanceled := instance.GetIsCancelledChannel(key)
-
 	for {
 		select {
-		case <-isCanceled:
-			infoCancelledProcessChannel(key)
-			return
 		case <-ctx.Done():
+			infoCancelledProcessChannel(key)
 			return
 		case err := <-goSubprocessKilled:
 			errorProcessKilled(key, watcher.cmd.Process.Pid, err)
