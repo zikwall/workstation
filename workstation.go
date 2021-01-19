@@ -35,9 +35,7 @@ func (self *Workstation) PerformAsync(key string, payload Payload) error {
 		self.wg.Add(1)
 
 		defer func() {
-			self.safeCancel(key)
-			// try detach
-			self.detach(key)
+			self.tryCancelAndDetach(key)
 			self.wg.Done()
 		}()
 
@@ -118,13 +116,15 @@ func (self *Workstation) cancel(key string) {
 	self.processes[key].cancel()
 }
 
-func (self *Workstation) safeCancel(key string) {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
+func (self *Workstation) tryCancelAndDetach(key string) {
+	self.mu.Lock()
+	defer self.mu.Unlock()
 
 	if _, ok := self.processes[key]; ok && self.processes[key].ctx.Err() == nil {
 		self.processes[key].cancel()
 	}
+
+	delete(self.processes, key)
 }
 
 // The method waits for graceful completion or crashes after a certain amount of time
