@@ -7,6 +7,7 @@ import (
 type (
 	Workerable interface {
 		Perform(ctx context.Context, key string, payload Payload)
+		Name() string
 	}
 	Observable interface {
 		LookupProcess(key string) bool

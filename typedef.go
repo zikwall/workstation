@@ -3,6 +3,7 @@ package workstation
 import (
 	"context"
 	"sync"
+	"time"
 )
 
 type (
@@ -12,6 +13,11 @@ type (
 		cancel context.CancelFunc
 	}
 	Workstation struct {
+		spaces    map[string]*Workspace
+		mu        sync.RWMutex
+		startedAt time.Time
+	}
+	Workspace struct {
 		mu        sync.RWMutex
 		processes map[string]Process
 		worker    Workerable
