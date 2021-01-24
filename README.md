@@ -32,6 +32,10 @@ func (w *MyWorker) Perform(ctx context.Context, key string, payload workstation.
 	//.. or unit process
 }
 
+func (w *MyWorker) Name() string {
+	return "worker_name_here"
+}
+
 // and create workstation ...
 ```
 
@@ -40,12 +44,19 @@ func (w *MyWorker) Perform(ctx context.Context, key string, payload workstation.
 ```go
 ctx, cancel := context.WithCancel(context.Background())
 
-station := workstation.BuildWorkstation(ctx, &MyWorker{})
+station := workstation.BuildWorkstation(ctx, &MyWorker{}, &MySecondWorker{})
+
+space1, _ := station.Workspace((&MyWorker{}).Name())
+space2, _ := station.Workspace((&MySecondWorker{}).Name())
 
 // run sub-processes
 
-err := station.PerformAsync(
+err := space1.PerformAsync(
     "first_process", workstation.Payload{"a": 1, "b": "6", "c": sampleFunctionC},
+)
+
+err := space2.PerformAsync(
+    "first_process", workstation.Payload{"a": 2, "b": "11", "c": sampleFunctionC},
 )
 
 // .. <another sub-processes>
@@ -53,9 +64,10 @@ err := station.PerformAsync(
 
 cancel()
 
-if err := station.Shutdown(); err != nil {
-	log.Fatal(err)
-}
+// stop all workspaces
+station.Shutdown(func(e error) {
+	// .. <handle errors>
+})
 ```
 
 #### Todo
