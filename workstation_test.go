@@ -59,12 +59,36 @@ func (w *MockWorker) Name() string {
 	return "mock_worker"
 }
 
+type MockWorkerTwo struct{}
+
+func (w *MockWorkerTwo) Perform(ctx context.Context, key string, payload Payload) {
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Cancelled")
+			return
+		default:
+			globalCollector.Add(payload["id"])
+		}
+	}
+}
+
+func (w *MockWorkerTwo) Name() string {
+	return "mock_worker_two"
+}
+
 func TestWorkstation(t *testing.T) {
 	t.Run("it should be successful init workstation", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
-		workstation := BuildWorkstation(ctx, &MockWorker{})
+		workstation := BuildWorkstation(ctx, &MockWorker{}, &MockWorkerTwo{})
 		workspace, err := workstation.Workspace((&MockWorker{}).Name())
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		workspaceTwo, err := workstation.Workspace((&MockWorkerTwo{}).Name())
 
 		if err != nil {
 			t.Fatal(err)
@@ -83,14 +107,38 @@ func TestWorkstation(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			if err := workspaceTwo.PerformAsync("process_one", Payload{"id": 10, "name": "Process One"}); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := workspaceTwo.PerformAsync("process_three", Payload{"id": 30, "name": "Process Three"}); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := workspaceTwo.PerformAsync("process_two", Payload{"id": 20, "name": "Process Two"}); err != nil {
+				t.Fatal(err)
+			}
+
 			t.Run("it should be success check count of active process", func(t *testing.T) {
 				if workspace.CountAsync() != 3 {
+					t.Fatal("Failed, expected to get three active processes")
+				}
+
+				if workspaceTwo.CountAsync() != 3 {
 					t.Fatal("Failed, expected to get three active processes")
 				}
 			})
 
 			t.Run("this must be an unsuccessful creation of a duplicate (duplicate) process", func(t *testing.T) {
 				if err := workspace.PerformAsync("process_two", Payload{"id": 20, "name": "Duplicate process two"}); err == nil {
+					t.Fatal("Failed, expected to get a creation error")
+				} else {
+					if errors.As(err, &ErrorAsyncProcessAlreadyExists) == false {
+						t.Fatal("Failed, expect typed error")
+					}
+				}
+
+				if err := workspaceTwo.PerformAsync("process_two", Payload{"id": 20, "name": "Duplicate process two"}); err == nil {
 					t.Fatal("Failed, expected to get a creation error")
 				} else {
 					if errors.As(err, &ErrorAsyncProcessAlreadyExists) == false {
@@ -105,6 +153,18 @@ func TestWorkstation(t *testing.T) {
 				}
 
 				if err := workspace.RevokeAsync("process_one"); err == nil {
+					t.Fatal("Failed, expected to get a removed error")
+				} else {
+					if errors.As(err, &ErrorAsyncProcessNotFoundOrAlreadyCompleted) == false {
+						t.Fatal("Failed, expect typed error")
+					}
+				}
+
+				if err := workspaceTwo.RevokeAsync("process_one"); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := workspaceTwo.RevokeAsync("process_one"); err == nil {
 					t.Fatal("Failed, expected to get a removed error")
 				} else {
 					if errors.As(err, &ErrorAsyncProcessNotFoundOrAlreadyCompleted) == false {
@@ -131,6 +191,10 @@ func TestWorkstation(t *testing.T) {
 
 		t.Run("it should be successfully give empty worstation pool", func(t *testing.T) {
 			if workspace.CountAsync() != 0 {
+				t.Fatal("Failed, expected to get empty pool")
+			}
+
+			if workspaceTwo.CountAsync() != 0 {
 				t.Fatal("Failed, expected to get empty pool")
 			}
 		})
