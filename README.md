@@ -1,4 +1,5 @@
 [![build](https://github.com/zikwall/workstation/workflows/tests/badge.svg)](https://github.com/zikwall/workstation/actions)
+[![build](https://github.com/zikwall/workstation/workflows/golangci-lint/badge.svg)](https://github.com/zikwall/workstation/actions)
 
 <div align="center">
   <h1>Workstation</h1>
