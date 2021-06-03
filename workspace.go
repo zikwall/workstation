@@ -30,9 +30,8 @@ func (self *Workspace) PerformAsync(key string, payload Payload) error {
 		cancel: cancel,
 	})
 
+	self.wg.Add(1)
 	go func(process string) {
-		self.wg.Add(1)
-
 		defer func() {
 			self.tryCancelAndDetach(key)
 			self.wg.Done()
